@@ -53,7 +53,7 @@ docker compose exec airflow airflow dags test wdbc_pipeline 2026-08-26
 python scripts/corrupt_extract.py --repair
 ```
 
-Script làm trống khoảng 12% giá trị `mean_radius`. Task `validate` ghi các dòng lỗi vào `rejected.parquet` rồi dừng DAG nếu hơn 5% dòng bị loại. Lệnh `--repair` khôi phục CSV gốc. Có thể xem lý do lỗi trong Airflow Grid → task `validate` → Logs.
+Script làm trống khoảng 12% giá trị `mean_radius`. Task `validate` ghi các dòng lỗi vào `rejected.parquet` rồi dừng DAG nếu hơn 5% dòng bị loại. Lệnh `--repair` khôi phục CSV gốc. Lý do lỗi hiện trong đầu ra lệnh `dags test`; Airflow Grid đánh dấu run thất bại.
 
 ## Cấu trúc chính
 
@@ -70,5 +70,17 @@ Script làm trống khoảng 12% giá trị `mean_radius`. Task `validate` ghi c
 ## Kết quả kiểm thử
 
 Với ngày logic `2026-08-25`, cả 7 task đều thành công: 564 dòng hợp lệ, 441 dòng train, 123 dòng test, `accuracy=0.9512`, `roc_auc=0.9956`. Model version 1 được đăng ký và script dự đoán tải lại version đó từ MLflow, dự đoán đúng 5/5 dòng thử. Backfill `2026-08-22` đến `2026-08-24` thành công cả 21 task, tạo ba thư mục ngày và model versions 2–4. Khi thêm dữ liệu lỗi, `validate` dừng DAG tại mức 13.0% dòng bị loại; lệnh `--repair` khôi phục CSV đúng checksum ban đầu.
+
+## Ảnh minh chứng
+
+Ảnh được chụp từ Airflow và MLflow chạy cục bộ sau các lệnh kiểm thử ở trên.
+
+| Nội dung | Ảnh |
+|---|---|
+| Airflow Grid: bốn run thành công và một run bị chặn bởi validation | ![Airflow Grid](docs/screenshots/airflow-grid.png) |
+| Airflow Graph: bảy task của run thành công ngày `2026-08-25` | ![Airflow Graph](docs/screenshots/airflow-graph.png) |
+| MLflow: bốn run từ lần chạy mẫu và backfill | ![MLflow experiment runs](docs/screenshots/mlflow-experiment-runs.png) |
+| MLflow Registry: bốn phiên bản `wdbc-classifier` | ![MLflow model versions](docs/screenshots/mlflow-model-versions.png) |
+| MLflow run: tham số và chỉ số `accuracy`, `roc_auc` | ![MLflow run metrics](docs/screenshots/mlflow-run-metrics.png) |
 
 Hướng triển khai MLflow tham khảo [bài mẫu của locnp13](https://github.com/locnp13/ddm501-t03-airflow).
