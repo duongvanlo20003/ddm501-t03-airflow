@@ -1,0 +1,73 @@
+# Tutorial 03 — Airflow
+#
+#   docker compose up -d --build      # first time: builds the image, then starts it
+#   docker compose ps                 # wait for STATUS = healthy (about a minute)
+#   docker compose exec airflow cat /opt/airflow/standalone_admin_password.txt
+#
+# On Linux, first create a .env file next to this one containing:
+#     AIRFLOW_UID=1000                # the number `id -u` prints
+#
+# Then open http://127.0.0.1:18080 and log in as `admin`.
+
+name: ddm501-t03
+
+services:
+  mlflow:
+    build: .
+    image: ddm501-t03-airflow:2.8.4
+    container_name: ddm501-t03-mlflow
+    entrypoint: ["mlflow"]
+    command:
+      - server
+      - --backend-store-uri
+      - sqlite:////mlflow/mlflow.db
+      - --artifacts-destination
+      - /mlflow/artifacts
+      - --host
+      - 0.0.0.0
+      - --port
+      - "5000"
+    ports:
+      - "15030:5000"
+    user: "${AIRFLOW_UID:-50000}:0"
+    volumes:
+      - ./mlflow-data:/mlflow
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:5000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 30s
+    restart: unless-stopped
+
+  airflow:
+    build: .
+    image: ddm501-t03-airflow:2.8.4
+    container_name: ddm501-t03-airflow
+    command: standalone
+    depends_on:
+      mlflow:
+        condition: service_healthy
+    ports:
+      # 18080, not 8080: Lab 2's Airflow already owns 8080 and you will want
+      # to run both at some point.
+      - "18080:8080"
+    environment:
+      AIRFLOW__CORE__EXECUTOR: SequentialExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "true"
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: sqlite:////opt/airflow/airflow.db
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+    user: "${AIRFLOW_UID:-50000}:0"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./data:/opt/airflow/data
+      - ./logs:/opt/airflow/logs
+      - ./scripts:/opt/airflow/scripts
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 60s
+    restart: unless-stopped

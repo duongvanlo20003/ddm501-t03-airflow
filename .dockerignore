@@ -1,0 +1,26 @@
+# The build COPYs nothing -- dags/, data/ and logs/ are bind-mounted at run
+# time, not baked in. This file is here so the build context stays small:
+# without it, `docker compose build` uploads every task log you have ever
+# generated to the daemon before running a single instruction.
+logs/
+mlflow-data/
+data/staging/
+data/raw/*.orig
+airflow.db
+airflow-webserver.pid
+standalone_admin_password.txt
+webserver_config.py
+
+.venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+
+*.pdf
+*.docx
+*.zip
+
+.git/
+.gitignore
+.env
+.DS_Store

@@ -1,0 +1,15 @@
+# For running Airflow locally (macOS, Linux, or Windows + WSL2).
+# Install WITH the constraints file, or pip will pull a dependency set that
+# does not work together:
+#
+#   pip install -r requirements.txt \
+#     --constraint https://raw.githubusercontent.com/apache/airflow/constraints-2.8.4/constraints-3.11.txt
+#
+# numpy 1.24.4 and pandas 2.1.4 are not typos and not a downgrade you should
+# "fix". Airflow 2.8.4 pins them, which is exactly the constraint Lab 2 runs
+# into, one step larger.
+apache-airflow==2.8.4
+pandas==2.1.4
+pyarrow==14.0.2
+mlflow==2.19.0
+scikit-learn==1.6.0
