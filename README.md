@@ -37,6 +37,14 @@ Script dự đoán tải mô hình từ MLflow Registry, không đọc mô hình
 docker compose exec airflow python scripts/fetch_and_predict.py --version 1 --rows 10
 ```
 
+Để chạy lại các ngày trước (backfill):
+
+```powershell
+docker compose exec airflow airflow dags backfill wdbc_pipeline -s 2026-08-22 -e 2026-08-24
+```
+
+Kiểm tra ba thư mục ngày tương ứng trong `data/staging/` và ba dòng ngày đó trong `history.jsonl`. Trên Airflow Grid, chọn từng run và từng task để xem log chi tiết. Mỗi ngày backfill cũng tạo một model version trong MLflow.
+
 ## Thử trường hợp dữ liệu lỗi
 
 ```powershell
@@ -61,6 +69,6 @@ Script làm trống khoảng 12% giá trị `mean_radius`. Task `validate` ghi c
 
 ## Kết quả kiểm thử
 
-Với ngày logic `2026-08-25`, cả 7 task đều thành công: 564 dòng hợp lệ, 441 dòng train, 123 dòng test, `accuracy=0.9512`, `roc_auc=0.9956`. Model version 1 được đăng ký và script dự đoán tải lại version đó từ MLflow, dự đoán đúng 5/5 dòng thử. Khi thêm dữ liệu lỗi, `validate` dừng DAG tại mức 13.0% dòng bị loại; lệnh `--repair` khôi phục CSV đúng checksum ban đầu.
+Với ngày logic `2026-08-25`, cả 7 task đều thành công: 564 dòng hợp lệ, 441 dòng train, 123 dòng test, `accuracy=0.9512`, `roc_auc=0.9956`. Model version 1 được đăng ký và script dự đoán tải lại version đó từ MLflow, dự đoán đúng 5/5 dòng thử. Backfill `2026-08-22` đến `2026-08-24` thành công cả 21 task, tạo ba thư mục ngày và model versions 2–4. Khi thêm dữ liệu lỗi, `validate` dừng DAG tại mức 13.0% dòng bị loại; lệnh `--repair` khôi phục CSV đúng checksum ban đầu.
 
 Hướng triển khai MLflow tham khảo [bài mẫu của locnp13](https://github.com/locnp13/ddm501-t03-airflow).
